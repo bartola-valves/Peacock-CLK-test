@@ -105,15 +105,73 @@ void onchange2(button_t *button_p)
   }
 }
 
+void onchangeCLK(button_t *button_p) 
+{
+  button_t *button = (button_t*)button_p;
+  
+  //printf("Jack on pin %d changed its state to %d\n", button->pin, button->state);
+
+  if(button->state) 
+  {
+    gpio_put(LED_SW1, 0);
+    // turn off the LED when released
+    return; // Ignore button release. Invert the logic if using
+            // a pullup (internal or external).
+
+  }
+  switch(button->pin){    
+    case CLK:
+    {
+        gpio_put(LED_SW1, 1);
+        if (!latch1)
+            latch1=true; 
+        else 
+            {
+                latch1=false; //reseting latch1
+                if  (latch2)
+                    latch2=false; // latch 2 reset
+                else 
+                    latch2=true; //set latch 2
+            }    
+        //printf("CLK latch state is: %d\n", latch1);
+
+
+        break;
+    }
+  }
+}
+
 
 void latch_LEDs(void)
 /* very simple testing function to turn on LED when latch is active after pressing button 1
     It uses global variable latch1*/
 {
-    if (latch1)
-        gpio_put(LED_OUT_7, 1);
-    else 
-        gpio_put(LED_OUT_7, 0);
+    switch (latch1){
+        case true:
+            {
+                gpio_put(LED_OUT_7, 1);
+                break; 
+            }
+        case false:
+            {
+                gpio_put(LED_OUT_7, 0);
+                break; 
+            }    
+    }
+    
+    switch (latch2) 
+    {
+        case true:
+        {
+            gpio_put(LED_OUT_6, 1);
+            break; 
+        }
+        case false:
+        {
+            gpio_put(LED_OUT_6, 0);
+            break; 
+        } 
+    }
 }
 
 int main()
@@ -122,17 +180,21 @@ int main()
 
     init_port(LED_SW1,GPIO_OUT);
     init_port(LED_SW2,GPIO_OUT);
+    init_port(CLK, GPIO_IN); 
+
     button_t *sw1_button = create_button(SW1, onchange);
     button_t *sw2_button = create_button(SW2, onchange2);
+    button_t *CLK_jack = create_button(CLK, onchangeCLK);
 
     init_port(LED_OUT_7, GPIO_OUT);
+    init_port(LED_OUT_6, GPIO_OUT);
 
     latch1 = false;
     latch2 = false;
+    printf("Hello, Peacock CLK testing!\n");
 
     while (true) {
-        printf("Hello, world!\n");
         latch_LEDs();
-        sleep_ms(1000);
+ //       sleep_ms(1000); no need to to delay!
     }
 }
